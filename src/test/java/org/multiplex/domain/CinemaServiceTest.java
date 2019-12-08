@@ -12,13 +12,13 @@ import java.util.List;
 
 import static org.assertj.core.api.BDDAssertions.then;
 
-class CinemaFacadeTest {
+class CinemaServiceTest {
 
     private final InMemoryScreeningRepository repository = new InMemoryScreeningRepository();
-    private final CinemaFacade cinemaFacade = new CinemaFacade(repository);
+    private final CinemaService cinemaService = new CinemaService(repository);
 
     @Test
-    public void shouldReturnScreeningsInTimeRange() {
+    public void shouldReturnScreeningsStartsInGivenTimeRange() {
 
         //given
         addScreening(TITANIC, YELLOW_ROOM, date("2019-12-05", "09:00"));
@@ -32,7 +32,7 @@ class CinemaFacadeTest {
         OffsetDateTime to = date("2019-12-06", "16:00");
 
         //when
-        final List<Screening> screenings = cinemaFacade.findScreenings(from, to);
+        final List<Screening> screenings = cinemaService.findScreenings(from, to);
 
         then(screenings).hasSize(3)
                 .haveExactly(1, screening(TITANIC, YELLOW_ROOM, date("2019-12-06", "09:00")))

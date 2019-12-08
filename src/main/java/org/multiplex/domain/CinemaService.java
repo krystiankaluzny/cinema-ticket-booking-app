@@ -3,11 +3,11 @@ package org.multiplex.domain;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-class CinemaFacade {
+public class CinemaService {
 
     private final ScreeningRepository screeningRepository;
 
-    CinemaFacade(ScreeningRepository screeningRepository) {
+    CinemaService(ScreeningRepository screeningRepository) {
         this.screeningRepository = screeningRepository;
     }
 
