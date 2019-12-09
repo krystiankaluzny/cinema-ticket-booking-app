@@ -25,7 +25,8 @@ class CinemaServiceTest {
 
     private final InMemoryScreeningRepository screeningRepo = new InMemoryScreeningRepository();
     private final InMemoryReservationRepository reservationRepo = new InMemoryReservationRepository();
-    private final CinemaService cinemaService = new CinemaService(screeningRepo, reservationRepo);
+    private final ReservationPricingPolicy reservationPricingPolicy = new StandardPricingPolicy();
+    private final CinemaService cinemaService = new CinemaService(screeningRepo, reservationRepo, reservationPricingPolicy);
 
     @Test
     public void getAvailableScreenings_ReturnsScreensInTimeRange() {
@@ -140,7 +141,7 @@ class CinemaServiceTest {
     private static int nextReservationId = 1;
     private int addReservation(int screeningId, int row, int column) {
         int reservationId = nextReservationId++;
-        reservationRepo.add(new Reservation(reservationId, screeningId, row, column, new Reservation.User("John", "Smith")));
+        reservationRepo.save(new Reservation(reservationId, screeningId, row, column, new Reservation.User("John", "Smith"), OffsetDateTime.now(), Reservation.Type.ADULT, false));
 
         return reservationId;
     }

@@ -9,10 +9,11 @@ class InMemoryReservationRepository implements ReservationRepository {
 
     private final Map<Integer, Reservation> data = new ConcurrentHashMap<>();
 
-    void add(Reservation reservation) {
+    @Override
+    public Reservation save(Reservation reservation) {
         data.put(reservation.getId(), reservation);
+        return reservation;
     }
-
 
     @Override
     public List<Reservation> findByScreeningId(int screeningId) {

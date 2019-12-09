@@ -18,10 +18,12 @@ public class CinemaService {
 
     private final ScreeningRepository screeningRepository;
     private final ReservationRepository reservationRepository;
+    private final ReservationPricingPolicy reservationPricingPolicy;
 
-    CinemaService(ScreeningRepository screeningRepository, ReservationRepository reservationRepository) {
+    CinemaService(ScreeningRepository screeningRepository, ReservationRepository reservationRepository, ReservationPricingPolicy reservationPricingPolicy) {
         this.screeningRepository = screeningRepository;
         this.reservationRepository = reservationRepository;
+        this.reservationPricingPolicy = reservationPricingPolicy;
     }
 
     public List<AvailableScreeningDto> getAvailableScreenings(TimeRangeDto timeRangeDto) {
