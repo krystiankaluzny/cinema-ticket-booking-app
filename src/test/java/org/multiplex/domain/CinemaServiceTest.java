@@ -10,7 +10,9 @@ import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.TimeRangeDto;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -27,7 +29,8 @@ class CinemaServiceTest {
     private final InMemoryScreeningRepository screeningRepo = new InMemoryScreeningRepository();
     private final InMemoryReservationRepository reservationRepo = new InMemoryReservationRepository();
     private final ReservationPricingPolicy reservationPricingPolicy = new StandardPricingPolicy();
-    private final CinemaService cinemaService = new CinemaService(screeningRepo, reservationRepo, reservationPricingPolicy);
+    private final Clock clock = Clock.fixed(Instant.parse("2019-12-09T10:30:02.00Z"), ZoneOffset.UTC);
+    private final CinemaService cinemaService = new CinemaService(screeningRepo, reservationRepo, reservationPricingPolicy, clock);
 
     @Test
     public void getAvailableScreenings_ReturnsScreensInTimeRange() {
@@ -56,7 +59,7 @@ class CinemaServiceTest {
 
 
     @Test
-    public void getScreeningSeatsInfo_ReturnAllSeatsAsAvailable_IfThereIsNoReservation() {
+    public void getScreeningSeatsInfo_ReturnsAllSeatsAsAvailable_IfThereIsNoReservation() {
 
         //given
         int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
@@ -70,7 +73,7 @@ class CinemaServiceTest {
     }
 
     @Test
-    public void getScreeningSeatsInfo_ReturnNotReservedSeatsAsAvailable_IfThereIsReservation() {
+    public void getScreeningSeatsInfo_ReturnsAvailableSeats_SeatsForPaidReservationAreSkipped() {
 
         //given
         int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
@@ -81,13 +84,70 @@ class CinemaServiceTest {
                 new ReservedSeat(3, 13, ReservationType.ADULT),
                 new ReservedSeat(10, 3, ReservationType.ADULT));
 
-        addReservation(screeningId, reservedSeats);
+        Reservation.ReservationBuilder reservationBuilder = Reservation.builder()
+                .screeningId(screeningId)
+                .reservedSeats(reservedSeats)
+                .paid(true);
+
+        addReservation(reservationBuilder);
 
         //when
         ScreeningSeatsInfoDto screeningSeatsInfo = cinemaService.getScreeningSeatsInfo(id);
 
         then(screeningSeatsInfo.getRoomName()).isEqualTo(RED_ROOM.getName());
         then(screeningSeatsInfo.getAvailableSeats()).hasSize(397);
+    }
+
+    @Test
+    public void getScreeningSeatsInfo_ReturnsAvailableSeats_SeatsForNoPaidAndNoExpiredReservationAreSkipped() {
+
+        //given
+        int screeningId = addScreening(FORREST_GUMP, YELLOW_ROOM, date("2019-12-09", "12:30"));
+        ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
+
+        Set<ReservedSeat> reservedSeats = Set.of(
+                new ReservedSeat(3, 10, ReservationType.ADULT),
+                new ReservedSeat(10, 3, ReservationType.ADULT));
+
+        Reservation.ReservationBuilder reservationBuilder = Reservation.builder()
+                .screeningId(screeningId)
+                .reservedSeats(reservedSeats)
+                .expirationTime(OffsetDateTime.now(clock).plusHours(2))
+                .paid(false);
+
+        addReservation(reservationBuilder);
+
+        //when
+        ScreeningSeatsInfoDto screeningSeatsInfo = cinemaService.getScreeningSeatsInfo(id);
+
+        then(screeningSeatsInfo.getRoomName()).isEqualTo(YELLOW_ROOM.getName());
+        then(screeningSeatsInfo.getAvailableSeats()).hasSize(623);
+    }
+
+    @Test
+    public void getScreeningSeatsInfo_ReturnsAvailableSeats_SeatsForNoPaidAndExpiredReservationAreAvailable() {
+
+        //given
+        int screeningId = addScreening(FORREST_GUMP, BLUE_ROOM, date("2019-12-09", "12:30"));
+        ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
+
+        Set<ReservedSeat> reservedSeats = Set.of(
+                new ReservedSeat(3, 10, ReservationType.ADULT),
+                new ReservedSeat(23, 3, ReservationType.ADULT));
+
+        Reservation.ReservationBuilder reservationBuilder = Reservation.builder()
+                .screeningId(screeningId)
+                .reservedSeats(reservedSeats)
+                .expirationTime(OffsetDateTime.now(clock).minusHours(2))
+                .paid(false);
+
+        addReservation(reservationBuilder);
+
+        //when
+        ScreeningSeatsInfoDto screeningSeatsInfo = cinemaService.getScreeningSeatsInfo(id);
+
+        then(screeningSeatsInfo.getRoomName()).isEqualTo(BLUE_ROOM.getName());
+        then(screeningSeatsInfo.getAvailableSeats()).hasSize(540);
     }
 
     @Test
@@ -144,19 +204,11 @@ class CinemaServiceTest {
     }
 
     private static int nextReservationId = 1;
-    private int addReservation(int screeningId, Set<ReservedSeat> reservedSeats) {
+    private int addReservation(Reservation.ReservationBuilder builder) {
 
         int reservationId = nextReservationId++;
 
-        reservationRepo.save(Reservation.builder()
-                .id(reservationId)
-                .screeningId(screeningId)
-                .bookingUserName("John")
-                .bookingUserSurname("Smith")
-                .expirationTime(OffsetDateTime.now())
-                .reservedSeats(reservedSeats)
-                .paid(false)
-                .build());
+        reservationRepo.save(builder.id(reservationId).build());
 
         return reservationId;
     }

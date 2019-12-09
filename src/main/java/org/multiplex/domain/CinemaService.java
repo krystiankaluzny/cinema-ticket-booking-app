@@ -10,6 +10,7 @@ import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto.AvailableSeatDto;
 import org.multiplex.domain.dto.TimeRangeDto;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,11 +25,13 @@ public class CinemaService {
     private final ScreeningRepository screeningRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationPricingPolicy reservationPricingPolicy;
+    private final Clock clock;
 
-    CinemaService(ScreeningRepository screeningRepository, ReservationRepository reservationRepository, ReservationPricingPolicy reservationPricingPolicy) {
+    CinemaService(ScreeningRepository screeningRepository, ReservationRepository reservationRepository, ReservationPricingPolicy reservationPricingPolicy, Clock clock) {
         this.screeningRepository = screeningRepository;
         this.reservationRepository = reservationRepository;
         this.reservationPricingPolicy = reservationPricingPolicy;
+        this.clock = clock;
     }
 
     public List<AvailableScreeningDto> getAvailableScreenings(TimeRangeDto timeRangeDto) {
@@ -51,10 +54,12 @@ public class CinemaService {
         Map<Integer, Set<Integer>> reservedSeats = new HashMap<>();
 
         for (Reservation reservation : reservations) {
-            Set<ReservedSeat> seats = reservation.getReservedSeats();
-            for (ReservedSeat seat : seats) {
-                Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(seat.getRow(), row -> new HashSet<>());
-                reservedColumnsInRow.add(seat.getColumn());
+            if(isReservationActive(reservation)) {
+                Set<ReservedSeat> seats = reservation.getReservedSeats();
+                for (ReservedSeat seat : seats) {
+                    Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(seat.getRow(), row -> new HashSet<>());
+                    reservedColumnsInRow.add(seat.getColumn());
+                }
             }
         }
 
@@ -122,6 +127,10 @@ public class CinemaService {
                 .expirationTime(expirationTime)
                 .totalCost(totalPrice.getValue())
                 .build();
+    }
+
+    private boolean isReservationActive(Reservation reservation) {
+        return reservation.isPaid() || reservation.getExpirationTime().isAfter(OffsetDateTime.now(clock));
     }
 
     private ReservationType typeFromDto(ReservationDto.ReservationType reservationType) {
