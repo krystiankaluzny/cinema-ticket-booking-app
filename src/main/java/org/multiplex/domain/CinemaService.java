@@ -1,7 +1,10 @@
 package org.multiplex.domain;
 
-import java.time.OffsetDateTime;
+import org.multiplex.domain.dto.AvailableScreeningDto;
+import org.multiplex.domain.dto.TimeRangeDto;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CinemaService {
 
@@ -11,9 +14,16 @@ public class CinemaService {
         this.screeningRepository = screeningRepository;
     }
 
-    List<Screening> findScreenings(OffsetDateTime from, OffsetDateTime to) {
+    public List<AvailableScreeningDto> getAvailableScreenings(TimeRangeDto timeRangeDto) {
 
-        return screeningRepository.findByStartTimeBetween(from, to);
+        return screeningRepository.findByStartTimeBetween(timeRangeDto.getFrom(), timeRangeDto.getTo()).stream()
+                .map(screening -> AvailableScreeningDto.builder()
+                        .screeningId(screening.getId())
+                        .movieTitle(screening.getMovie().getTitle())
+                        .startScreeningTime(screening.getStartScreeningTime())
+                        .build()
+                )
+                .collect(Collectors.toList());
     }
 
 }

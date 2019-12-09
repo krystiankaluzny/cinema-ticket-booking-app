@@ -2,6 +2,8 @@ package org.multiplex.domain;
 
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
+import org.multiplex.domain.dto.AvailableScreeningDto;
+import org.multiplex.domain.dto.TimeRangeDto;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -28,16 +30,18 @@ class CinemaServiceTest {
         addScreening(GLADIATOR, YELLOW_ROOM, date("2019-12-06", "13:00"));
         addScreening(GLADIATOR, RED_ROOM, date("2019-12-06", "18:00"));
 
-        OffsetDateTime from = date("2019-12-06", "08:00");
-        OffsetDateTime to = date("2019-12-06", "16:00");
+        TimeRangeDto timeRangeDto = TimeRangeDto.builder()
+                .from(date("2019-12-06", "08:00"))
+                .to(date("2019-12-06", "16:00"))
+                .build();
 
         //when
-        final List<Screening> screenings = cinemaService.findScreenings(from, to);
+        List<AvailableScreeningDto> availableScreenings = cinemaService.getAvailableScreenings(timeRangeDto);
 
-        then(screenings).hasSize(3)
-                .haveExactly(1, screening(TITANIC, YELLOW_ROOM, date("2019-12-06", "09:00")))
-                .haveExactly(1, screening(TITANIC, BLUE_ROOM, date("2019-12-06", "12:00")))
-                .haveExactly(1, screening(GLADIATOR, YELLOW_ROOM, date("2019-12-06", "13:00")));
+        then(availableScreenings).hasSize(3)
+                .haveExactly(1, screening(TITANIC, date("2019-12-06", "09:00")))
+                .haveExactly(1, screening(TITANIC, date("2019-12-06", "12:00")))
+                .haveExactly(1, screening(GLADIATOR, date("2019-12-06", "13:00")));
     }
 
     private OffsetDateTime date(String date, String time) {
@@ -50,11 +54,10 @@ class CinemaServiceTest {
         repository.add(new Screening(nextScreeningId++, movie, room, startTime));
     }
 
-    private Condition<Screening> screening(Movie movie, Room room, OffsetDateTime startTime) {
-        return new Condition<>(screening ->
-                screening.getMovie().equals(movie)
-                        && screening.getRoom().equals(room)
-                        && screening.getStartScreeningTime().equals(startTime),
+    private Condition<AvailableScreeningDto> screening(Movie movie, OffsetDateTime startTime) {
+        return new Condition<>(availableScreening ->
+                availableScreening.getMovieTitle().equals(movie.getTitle())
+                        && availableScreening.getStartScreeningTime().equals(startTime),
                 "Screening condition");
     }
 
