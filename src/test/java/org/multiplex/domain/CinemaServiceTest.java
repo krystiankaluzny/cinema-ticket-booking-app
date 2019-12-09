@@ -9,6 +9,7 @@ import org.multiplex.domain.dto.ReservationSummaryDto;
 import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.TimeRangeDto;
+import org.multiplex.domain.exception.ReservationTimeException;
 import org.multiplex.domain.exception.ScreeningNotFoundException;
 
 import java.time.Clock;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.BDDAssertions.thenCode;
 import static org.assertj.core.api.BDDAssertions.thenThrownBy;
 import static org.multiplex.domain.Screening.Movie;
 import static org.multiplex.domain.Screening.Room;
@@ -204,7 +206,50 @@ class CinemaServiceTest {
     }
 
     @Test
-    public void reserveSeats_Throws__IfThereIsNotScreeningWithGivenId() {
+    public void reserveSeats_Pass_IfThereIsMoreOrEqualThan15MinutesToScreeningTime() {
+
+        //given
+        OffsetDateTime screeningStartTime = OffsetDateTime.now(clock).plusMinutes(15);
+        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, screeningStartTime);
+
+        SeatToReserveDto adultSeat = SeatToReserveDto.builder()
+                .row(1)
+                .column(1)
+                .reservationType(ReservationDto.ReservationType.ADULT)
+                .build();
+
+        ReservationDto reservationDto = ReservationDto.builder()
+                .screeningId(ScreeningIdDto.fromInt(screeningId))
+                .seatsToReserve(List.of(adultSeat))
+                .bookingUser(ReservationDto.BookingUserDto.builder()
+                        .name("John")
+                        .surname("Smith")
+                        .build())
+                .build();
+
+        //when
+        thenCode(() -> cinemaService.reserveSeats(reservationDto))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    public void reserveSeats_Throws_IfThereIsLessThan15MinutesToScreeningTime() {
+
+        //given
+        OffsetDateTime screeningStartTime = OffsetDateTime.now(clock).plusMinutes(14);
+        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, screeningStartTime);
+
+        ReservationDto reservationDto = ReservationDto.builder()
+                .screeningId(ScreeningIdDto.fromInt(screeningId))
+                .build();
+
+        //when
+        thenThrownBy(() -> cinemaService.reserveSeats(reservationDto))
+                .isInstanceOf(ReservationTimeException.class);
+    }
+
+    @Test
+    public void reserveSeats_Throws_IfThereIsNotScreeningWithGivenId() {
 
         //given
         ReservationDto reservationDto = ReservationDto.builder()

@@ -9,6 +9,7 @@ import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto.AvailableSeatDto;
 import org.multiplex.domain.dto.TimeRangeDto;
+import org.multiplex.domain.exception.ReservationTimeException;
 import org.multiplex.domain.exception.ScreeningNotFoundException;
 
 import java.time.Clock;
@@ -50,7 +51,7 @@ public class CinemaService {
     public ScreeningSeatsInfoDto getScreeningSeatsInfo(ScreeningIdDto screeningId) {
 
         Screening screening = screeningRepository.findById(screeningId.getValue());
-        if(screening == null) {
+        if (screening == null) {
             throw new ScreeningNotFoundException(screeningId.getValue());
         }
 
@@ -59,7 +60,7 @@ public class CinemaService {
         Map<Integer, Set<Integer>> reservedSeats = new HashMap<>();
 
         for (Reservation reservation : reservations) {
-            if(isReservationActive(reservation)) {
+            if (isReservationActive(reservation)) {
                 Set<ReservedSeat> seats = reservation.getReservedSeats();
                 for (ReservedSeat seat : seats) {
                     Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(seat.getRow(), row -> new HashSet<>());
@@ -95,9 +96,15 @@ public class CinemaService {
     public ReservationSummaryDto reserveSeats(ReservationDto reservationDto) {
 
         int screeningId = reservationDto.getScreeningId().getValue();
+        Screening screening = screeningRepository.findById(screeningId);
 
-        if(!screeningRepository.exists(screeningId)) {
+        if (screening == null) {
             throw new ScreeningNotFoundException(screeningId);
+        }
+
+        if (OffsetDateTime.now(clock).plusMinutes(15)
+                .isAfter(screening.getStartScreeningTime())) {
+            throw new ReservationTimeException();
         }
 
         BookingUserDto bookingUser = reservationDto.getBookingUser();
