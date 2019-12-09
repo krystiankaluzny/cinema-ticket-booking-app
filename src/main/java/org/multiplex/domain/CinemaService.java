@@ -1,11 +1,16 @@
 package org.multiplex.domain;
 
 import org.multiplex.domain.dto.AvailableScreeningDto;
+import org.multiplex.domain.dto.ReservationDto;
+import org.multiplex.domain.dto.ReservationDto.BookingUserDto;
+import org.multiplex.domain.dto.ReservationDto.SeatToReserveDto;
+import org.multiplex.domain.dto.ReservationSummaryDto;
 import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto.AvailableSeatDto;
 import org.multiplex.domain.dto.TimeRangeDto;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,5 +80,60 @@ public class CinemaService {
                 .roomName(screening.getRoom().getName())
                 .availableSeats(availableSeats)
                 .build();
+    }
+
+    public ReservationSummaryDto reserveSeats(ReservationDto reservationDto) {
+
+        BookingUserDto bookingUser = reservationDto.getBookingUser();
+        List<SeatToReserveDto> seatsToReserve = reservationDto.getSeatsToReserve();
+
+        OffsetDateTime expirationTime = OffsetDateTime.now().plusMinutes(15);
+        ReservationPricingPolicy.Price totalPrice = ReservationPricingPolicy.Price.ZERO;
+
+        Set<ReservedSeat> reservedSeats = new HashSet<>();
+        for (SeatToReserveDto seatToReserveDto : seatsToReserve) {
+
+            ReservationType type = typeFromDto(seatToReserveDto.getReservationType());
+
+            reservedSeats.add(ReservedSeat.builder()
+                    .row(seatToReserveDto.getRow())
+                    .column(seatToReserveDto.getColumn())
+                    .type(type)
+                    .build());
+
+            ReservationPricingPolicy.Price price = reservationPricingPolicy.getPrice(type);
+
+            totalPrice.add(price);
+        }
+
+        Reservation reservation = Reservation.builder()
+                .screeningId(reservationDto.getScreeningId().getValue())
+                .bookingUserName(bookingUser.getName())
+                .bookingUserSurname(bookingUser.getSurname())
+                .expirationTime(expirationTime)
+                .reservedSeats(reservedSeats)
+                .paid(false)
+                .build();
+
+        reservationRepository.save(reservation);
+
+        return ReservationSummaryDto.builder()
+                .reservationId(reservation.getId())
+                .expirationTime(expirationTime)
+                .totalCost(totalPrice.getValue())
+                .build();
+    }
+
+    private ReservationType typeFromDto(ReservationDto.ReservationType reservationType) {
+        switch (reservationType) {
+            case ADULT:
+                return ReservationType.ADULT;
+            case STUDENT:
+                return ReservationType.STUDENT;
+            case CHILD:
+                return ReservationType.CHILD;
+        }
+
+        throw new IllegalArgumentException("Unknown reservation type: " + reservationType);
     }
 }

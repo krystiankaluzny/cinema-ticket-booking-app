@@ -16,6 +16,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.multiplex.domain.Screening.Movie;
@@ -74,9 +75,13 @@ class CinemaServiceTest {
         //given
         int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
         ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
-        addReservation(screeningId, 3, 10);
-        addReservation(screeningId, 3, 13);
-        addReservation(screeningId, 10, 3);
+
+        Set<ReservedSeat> reservedSeats = Set.of(
+                new ReservedSeat(3, 10, ReservationType.ADULT),
+                new ReservedSeat(3, 13, ReservationType.ADULT),
+                new ReservedSeat(10, 3, ReservationType.ADULT));
+
+        addReservation(screeningId, reservedSeats);
 
         //when
         ScreeningSeatsInfoDto screeningSeatsInfo = cinemaService.getScreeningSeatsInfo(id);
@@ -121,7 +126,7 @@ class CinemaServiceTest {
         //when
         ReservationSummaryDto reservationSummary = cinemaService.reserveSeats(reservationDto);
 
-        then(reservationSummary.getTotalCost()).isEqualTo(55.50);
+        then(reservationSummary.getTotalCost()).isEqualByComparingTo("55.50");
         then(reservationSummary.getExpirationTime()).isNotNull();
 
     }
@@ -139,9 +144,19 @@ class CinemaServiceTest {
     }
 
     private static int nextReservationId = 1;
-    private int addReservation(int screeningId, int row, int column) {
+    private int addReservation(int screeningId, Set<ReservedSeat> reservedSeats) {
+
         int reservationId = nextReservationId++;
-        reservationRepo.save(new Reservation(reservationId, screeningId, row, column, new Reservation.User("John", "Smith"), OffsetDateTime.now(), Reservation.Type.ADULT, false));
+
+        reservationRepo.save(Reservation.builder()
+                .id(reservationId)
+                .screeningId(screeningId)
+                .bookingUserName("John")
+                .bookingUserSurname("Smith")
+                .expirationTime(OffsetDateTime.now())
+                .reservedSeats(reservedSeats)
+                .paid(false)
+                .build());
 
         return reservationId;
     }

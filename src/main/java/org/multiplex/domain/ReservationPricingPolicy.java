@@ -21,5 +21,9 @@ interface ReservationPricingPolicy {
         public static Price from(BigDecimal value) {
             return new Price(value);
         }
+
+        public BigDecimal getValue() {
+            return value;
+        }
     }
 }
