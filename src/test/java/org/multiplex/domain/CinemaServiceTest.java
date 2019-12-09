@@ -9,6 +9,7 @@ import org.multiplex.domain.dto.ReservationSummaryDto;
 import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.TimeRangeDto;
+import org.multiplex.domain.exception.ScreeningNotFoundException;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.BDDAssertions.thenThrownBy;
 import static org.multiplex.domain.Screening.Movie;
 import static org.multiplex.domain.Screening.Room;
 
@@ -151,6 +153,16 @@ class CinemaServiceTest {
     }
 
     @Test
+    public void getScreeningSeatsInfo_Throws_IfThereIsNotScreeningWithGivenId() {
+
+        //given
+        ScreeningIdDto id = ScreeningIdDto.fromInt(17);
+
+        thenThrownBy(() -> cinemaService.getScreeningSeatsInfo(id))
+                .isInstanceOf(ScreeningNotFoundException.class);
+    }
+
+    @Test
     public void reserveSeats_CalculateCost_ForThreeReservationTypes_And_GiveExpirationTime() {
 
         //given
@@ -191,11 +203,25 @@ class CinemaServiceTest {
 
     }
 
+    @Test
+    public void reserveSeats_Throws__IfThereIsNotScreeningWithGivenId() {
+
+        //given
+        ReservationDto reservationDto = ReservationDto.builder()
+                .screeningId(ScreeningIdDto.fromInt(20))
+                .build();
+
+        thenThrownBy(() -> cinemaService.reserveSeats(reservationDto))
+                .isInstanceOf(ScreeningNotFoundException.class);
+
+    }
+
     private OffsetDateTime date(String date, String time) {
         return OffsetDateTime.of(LocalDate.parse(date), LocalTime.parse(time), ZoneOffset.UTC);
     }
 
     private static int nextScreeningId = 1;
+
     private int addScreening(Movie movie, Room room, OffsetDateTime startTime) {
         int screeningId = nextScreeningId++;
         screeningRepo.add(new Screening(screeningId, movie, room, startTime));
@@ -204,6 +230,7 @@ class CinemaServiceTest {
     }
 
     private static int nextReservationId = 1;
+
     private int addReservation(Reservation.ReservationBuilder builder) {
 
         int reservationId = nextReservationId++;

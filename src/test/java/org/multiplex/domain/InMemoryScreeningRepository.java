@@ -14,6 +14,17 @@ class InMemoryScreeningRepository implements ScreeningRepository {
         data.put(screening.getId(), screening);
     }
 
+    @Override
+    public boolean exists(int screeningId) {
+        return data.containsKey(screeningId);
+    }
+
+    @Override
+    public Screening findById(int screeningId) {
+        return data.get(screeningId);
+    }
+
+    @Override
     public List<Screening> findByStartTimeBetween(OffsetDateTime from, OffsetDateTime to) {
         return data.values().stream()
                 .filter(screening -> {
@@ -21,10 +32,5 @@ class InMemoryScreeningRepository implements ScreeningRepository {
                     return !(startScreeningTime.isBefore(from) || startScreeningTime.isAfter(to));
                 })
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public Screening findById(int screeningId) {
-        return data.get(screeningId);
     }
 }

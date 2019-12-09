@@ -9,6 +9,7 @@ import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto.AvailableSeatDto;
 import org.multiplex.domain.dto.TimeRangeDto;
+import org.multiplex.domain.exception.ScreeningNotFoundException;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -49,6 +50,10 @@ public class CinemaService {
     public ScreeningSeatsInfoDto getScreeningSeatsInfo(ScreeningIdDto screeningId) {
 
         Screening screening = screeningRepository.findById(screeningId.getValue());
+        if(screening == null) {
+            throw new ScreeningNotFoundException(screeningId.getValue());
+        }
+
         List<Reservation> reservations = reservationRepository.findByScreeningId(screeningId.getValue());
 
         Map<Integer, Set<Integer>> reservedSeats = new HashMap<>();
@@ -89,6 +94,12 @@ public class CinemaService {
 
     public ReservationSummaryDto reserveSeats(ReservationDto reservationDto) {
 
+        int screeningId = reservationDto.getScreeningId().getValue();
+
+        if(!screeningRepository.exists(screeningId)) {
+            throw new ScreeningNotFoundException(screeningId);
+        }
+
         BookingUserDto bookingUser = reservationDto.getBookingUser();
         List<SeatToReserveDto> seatsToReserve = reservationDto.getSeatsToReserve();
 
@@ -111,8 +122,9 @@ public class CinemaService {
             totalPrice.add(price);
         }
 
+
         Reservation reservation = Reservation.builder()
-                .screeningId(reservationDto.getScreeningId().getValue())
+                .screeningId(screeningId)
                 .bookingUserName(bookingUser.getName())
                 .bookingUserSurname(bookingUser.getSurname())
                 .expirationTime(expirationTime)
