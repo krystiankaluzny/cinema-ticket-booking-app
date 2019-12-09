@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Comparator.comparing;
+
 public class CinemaService {
 
     private final ScreeningRepository screeningRepository;
@@ -45,6 +47,8 @@ public class CinemaService {
                         .startScreeningTime(screening.getStartScreeningTime())
                         .build()
                 )
+                .sorted(comparing(AvailableScreeningDto::getMovieTitle)
+                        .thenComparing(AvailableScreeningDto::getStartScreeningTime))
                 .collect(Collectors.toList());
     }
 

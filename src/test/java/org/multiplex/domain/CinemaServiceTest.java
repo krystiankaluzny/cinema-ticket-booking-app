@@ -37,7 +37,7 @@ class CinemaServiceTest {
     private final CinemaService cinemaService = new CinemaService(screeningRepo, reservationRepo, reservationPricingPolicy, clock);
 
     @Test
-    public void getAvailableScreenings_ReturnsScreensInTimeRange() {
+    public void getAvailableScreenings_ReturnsScreenings_InTimeRange() {
 
         //given
         addScreening(TITANIC, YELLOW_ROOM, date("2019-12-05", "09:00"));
@@ -59,6 +59,32 @@ class CinemaServiceTest {
                 .haveExactly(1, screening(TITANIC, date("2019-12-06", "09:00")))
                 .haveExactly(1, screening(TITANIC, date("2019-12-06", "12:00")))
                 .haveExactly(1, screening(GLADIATOR, date("2019-12-06", "13:00")));
+    }
+
+    @Test
+    public void getAvailableScreenings_ReturnsSortedScreenings_ByMovieTitleAndScreeningTime() {
+
+        //given
+        addScreening(TITANIC, RED_ROOM, date("2019-12-06", "10:00"));
+        addScreening(TITANIC, YELLOW_ROOM, date("2019-12-06", "09:00"));
+        addScreening(TITANIC, BLUE_ROOM, date("2019-12-06", "12:00"));
+        addScreening(GLADIATOR, RED_ROOM, date("2019-12-06", "18:00"));
+        addScreening(GLADIATOR, YELLOW_ROOM, date("2019-12-06", "13:00"));
+
+        TimeRangeDto timeRangeDto = TimeRangeDto.builder()
+                .from(date("2019-12-06", "08:00"))
+                .to(date("2019-12-06", "20:00"))
+                .build();
+
+        //when
+        List<AvailableScreeningDto> availableScreenings = cinemaService.getAvailableScreenings(timeRangeDto);
+
+        then(availableScreenings).hasSize(5);
+        then(availableScreenings).element(0).is(screening(GLADIATOR, date("2019-12-06", "13:00")));
+        then(availableScreenings).element(1).is(screening(GLADIATOR, date("2019-12-06", "18:00")));
+        then(availableScreenings).element(2).is(screening(TITANIC, date("2019-12-06", "09:00")));
+        then(availableScreenings).element(3).is(screening(TITANIC, date("2019-12-06", "10:00")));
+        then(availableScreenings).element(4).is(screening(TITANIC, date("2019-12-06", "12:00")));
     }
 
 
