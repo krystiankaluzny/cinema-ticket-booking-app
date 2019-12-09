@@ -9,6 +9,7 @@ import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto.AvailableSeatDto;
 import org.multiplex.domain.dto.TimeRangeDto;
+import org.multiplex.domain.exception.InvalidUserNameOrSurnameException;
 import org.multiplex.domain.exception.ReservationTimeException;
 import org.multiplex.domain.exception.ScreeningNotFoundException;
 
@@ -29,12 +30,18 @@ public class CinemaService {
     private final ScreeningRepository screeningRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationPricingPolicy reservationPricingPolicy;
+    private final UserValidator userValidator;
     private final Clock clock;
 
-    CinemaService(ScreeningRepository screeningRepository, ReservationRepository reservationRepository, ReservationPricingPolicy reservationPricingPolicy, Clock clock) {
+    CinemaService(ScreeningRepository screeningRepository,
+                  ReservationRepository reservationRepository,
+                  ReservationPricingPolicy reservationPricingPolicy,
+                  UserValidator userValidator,
+                  Clock clock) {
         this.screeningRepository = screeningRepository;
         this.reservationRepository = reservationRepository;
         this.reservationPricingPolicy = reservationPricingPolicy;
+        this.userValidator = userValidator;
         this.clock = clock;
     }
 
@@ -106,12 +113,15 @@ public class CinemaService {
             throw new ScreeningNotFoundException(screeningId);
         }
 
-        if (OffsetDateTime.now(clock).plusMinutes(15)
-                .isAfter(screening.getStartScreeningTime())) {
+        if (isReservationTimeInvalid(screening.getStartScreeningTime())) {
             throw new ReservationTimeException();
         }
 
         BookingUserDto bookingUser = reservationDto.getBookingUser();
+        if (userValidator.isInvalid(bookingUser.getName(), bookingUser.getSurname())) {
+            throw new InvalidUserNameOrSurnameException(bookingUser.getName(), bookingUser.getSurname());
+        }
+
         List<SeatToReserveDto> seatsToReserve = reservationDto.getSeatsToReserve();
 
         OffsetDateTime expirationTime = OffsetDateTime.now().plusMinutes(15);
@@ -133,7 +143,6 @@ public class CinemaService {
             totalPrice.add(price);
         }
 
-
         Reservation reservation = Reservation.builder()
                 .screeningId(screeningId)
                 .bookingUserName(bookingUser.getName())
@@ -154,6 +163,11 @@ public class CinemaService {
 
     private boolean isReservationActive(Reservation reservation) {
         return reservation.isPaid() || reservation.getExpirationTime().isAfter(OffsetDateTime.now(clock));
+    }
+
+    private boolean isReservationTimeInvalid(OffsetDateTime startScreeningTime) {
+        return OffsetDateTime.now(clock).plusMinutes(15)
+                .isAfter(startScreeningTime);
     }
 
     private ReservationType typeFromDto(ReservationDto.ReservationType reservationType) {
