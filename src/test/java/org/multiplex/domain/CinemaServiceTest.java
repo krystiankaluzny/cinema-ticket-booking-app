@@ -13,6 +13,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.assertj.core.api.BDDAssertions.then;
+import static org.multiplex.domain.Screening.Movie;
+import static org.multiplex.domain.Screening.Room;
 
 class CinemaServiceTest {
 
