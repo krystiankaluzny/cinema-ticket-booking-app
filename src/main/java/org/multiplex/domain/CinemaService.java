@@ -30,9 +30,7 @@ public class CinemaService {
 
         return screeningRepository.findByStartTimeBetween(timeRangeDto.getFrom(), timeRangeDto.getTo()).stream()
                 .map(screening -> AvailableScreeningDto.builder()
-                        .screeningId(ScreeningIdDto.builder()
-                                .value(screening.getId())
-                                .build())
+                        .screeningId(ScreeningIdDto.fromInt(screening.getId()))
                         .movieTitle(screening.getMovie().getTitle())
                         .startScreeningTime(screening.getStartScreeningTime())
                         .build()
@@ -45,21 +43,24 @@ public class CinemaService {
         Screening screening = screeningRepository.findById(screeningId.getValue());
         List<Reservation> reservations = reservationRepository.findByScreeningId(screeningId.getValue());
 
-        Map<Integer, Set<Integer>> reservedSeats= new HashMap<>();
+        Map<Integer, Set<Integer>> reservedSeats = new HashMap<>();
 
         for (Reservation reservation : reservations) {
-            Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(reservation.getRow(), row -> new HashSet<>());
-            reservedColumnsInRow.add(reservation.getColumn());
+            Set<ReservedSeat> seats = reservation.getReservedSeats();
+            for (ReservedSeat seat : seats) {
+                Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(seat.getRow(), row -> new HashSet<>());
+                reservedColumnsInRow.add(seat.getColumn());
+            }
         }
-        
+
         List<AvailableSeatDto> availableSeats = new ArrayList<>();
-        
+
         for (int row = 0; row < screening.getRoom().getRowCount(); row++) {
             for (int col = 0; col < screening.getRoom().getColumnCount(); col++) {
-                
+
                 Set<Integer> reservedColumnsInRow = reservedSeats.get(row);
 
-                if(reservedColumnsInRow == null || !reservedColumnsInRow.contains(col)) {
+                if (reservedColumnsInRow == null || !reservedColumnsInRow.contains(col)) {
 
                     availableSeats.add(AvailableSeatDto.builder()
                             .row(row)
