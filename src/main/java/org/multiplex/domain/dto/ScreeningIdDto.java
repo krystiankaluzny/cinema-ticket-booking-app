@@ -7,4 +7,8 @@ import lombok.Value;
 @Value
 public class ScreeningIdDto {
     private int value;
+
+    public static ScreeningIdDto fromInt(int value) {
+        return new ScreeningIdDto(value);
+    }
 }

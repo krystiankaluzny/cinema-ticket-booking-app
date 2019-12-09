@@ -3,6 +3,9 @@ package org.multiplex.domain;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.multiplex.domain.dto.AvailableScreeningDto;
+import org.multiplex.domain.dto.ReservationDto;
+import org.multiplex.domain.dto.ReservationDto.SeatToReserveDto;
+import org.multiplex.domain.dto.ReservationSummaryDto;
 import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.TimeRangeDto;
@@ -50,13 +53,12 @@ class CinemaServiceTest {
     }
 
 
-
     @Test
     public void getScreeningSeatsInfo_ReturnAllSeatsAsAvailable_IfThereIsNoReservation() {
 
         //given
         int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
-        ScreeningIdDto id = ScreeningIdDto.builder().value(screeningId).build();
+        ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
 
         //when
         ScreeningSeatsInfoDto screeningSeatsInfo = cinemaService.getScreeningSeatsInfo(id);
@@ -70,7 +72,7 @@ class CinemaServiceTest {
 
         //given
         int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
-        ScreeningIdDto id = ScreeningIdDto.builder().value(screeningId).build();
+        ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
         addReservation(screeningId, 3, 10);
         addReservation(screeningId, 3, 13);
         addReservation(screeningId, 10, 3);
@@ -82,6 +84,46 @@ class CinemaServiceTest {
         then(screeningSeatsInfo.getAvailableSeats()).hasSize(397);
     }
 
+    @Test
+    public void reserveSeats_CalculateCost_ForThreeReservationTypes_And_GiveExpirationTime() {
+
+        //given
+        int screeningId = addScreening(GLADIATOR, YELLOW_ROOM, date("2019-12-10", "10:30"));
+
+        SeatToReserveDto adultSeat = SeatToReserveDto.builder()
+                .row(1)
+                .column(1)
+                .reservationType(ReservationDto.ReservationType.ADULT)
+                .build();
+
+        SeatToReserveDto studentSeat = SeatToReserveDto.builder()
+                .row(1)
+                .column(2)
+                .reservationType(ReservationDto.ReservationType.STUDENT)
+                .build();
+
+        SeatToReserveDto childSeat = SeatToReserveDto.builder()
+                .row(1)
+                .column(3)
+                .reservationType(ReservationDto.ReservationType.CHILD)
+                .build();
+
+        ReservationDto reservationDto = ReservationDto.builder()
+                .screeningId(ScreeningIdDto.fromInt(screeningId))
+                .seatsToReserve(List.of(adultSeat, studentSeat, childSeat))
+                .bookingUser(ReservationDto.BookingUserDto.builder()
+                        .name("John")
+                        .surname("Smith")
+                        .build())
+                .build();
+
+        //when
+        ReservationSummaryDto reservationSummary = cinemaService.reserveSeats(reservationDto);
+
+        then(reservationSummary.getTotalCost()).isEqualTo(55.50);
+        then(reservationSummary.getExpirationTime()).isNotNull();
+
+    }
 
     private OffsetDateTime date(String date, String time) {
         return OffsetDateTime.of(LocalDate.parse(date), LocalTime.parse(time), ZoneOffset.UTC);
