@@ -20,6 +20,11 @@ class InMemoryScreeningRepository implements ScreeningRepository {
                     final OffsetDateTime startScreeningTime = screening.getStartScreeningTime();
                     return !(startScreeningTime.isBefore(from) || startScreeningTime.isAfter(to));
                 })
-        .collect(Collectors.toList());
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Screening findById(int screeningId) {
+        return data.get(screeningId);
     }
 }

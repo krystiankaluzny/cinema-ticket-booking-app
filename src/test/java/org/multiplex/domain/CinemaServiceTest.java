@@ -3,6 +3,8 @@ package org.multiplex.domain;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.multiplex.domain.dto.AvailableScreeningDto;
+import org.multiplex.domain.dto.ScreeningIdDto;
+import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.TimeRangeDto;
 
 import java.time.Duration;
@@ -18,11 +20,12 @@ import static org.multiplex.domain.Screening.Room;
 
 class CinemaServiceTest {
 
-    private final InMemoryScreeningRepository repository = new InMemoryScreeningRepository();
-    private final CinemaService cinemaService = new CinemaService(repository);
+    private final InMemoryScreeningRepository screeningRepo = new InMemoryScreeningRepository();
+    private final InMemoryReservationRepository reservationRepo = new InMemoryReservationRepository();
+    private final CinemaService cinemaService = new CinemaService(screeningRepo, reservationRepo);
 
     @Test
-    public void shouldReturnScreeningsStartsInGivenTimeRange() {
+    public void getAvailableScreenings_ReturnsScreensInTimeRange() {
 
         //given
         addScreening(TITANIC, YELLOW_ROOM, date("2019-12-05", "09:00"));
@@ -46,14 +49,58 @@ class CinemaServiceTest {
                 .haveExactly(1, screening(GLADIATOR, date("2019-12-06", "13:00")));
     }
 
+
+
+    @Test
+    public void getScreeningSeatsInfo_ReturnAllSeatsAsAvailable_IfThereIsNoReservation() {
+
+        //given
+        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
+        ScreeningIdDto id = ScreeningIdDto.builder().value(screeningId).build();
+
+        //when
+        ScreeningSeatsInfoDto screeningSeatsInfo = cinemaService.getScreeningSeatsInfo(id);
+
+        then(screeningSeatsInfo.getRoomName()).isEqualTo(RED_ROOM.getName());
+        then(screeningSeatsInfo.getAvailableSeats()).hasSize(400);
+    }
+
+    @Test
+    public void getScreeningSeatsInfo_ReturnNotReservedSeatsAsAvailable_IfThereIsReservation() {
+
+        //given
+        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
+        ScreeningIdDto id = ScreeningIdDto.builder().value(screeningId).build();
+        addReservation(screeningId, 3, 10);
+        addReservation(screeningId, 3, 13);
+        addReservation(screeningId, 10, 3);
+
+        //when
+        ScreeningSeatsInfoDto screeningSeatsInfo = cinemaService.getScreeningSeatsInfo(id);
+
+        then(screeningSeatsInfo.getRoomName()).isEqualTo(RED_ROOM.getName());
+        then(screeningSeatsInfo.getAvailableSeats()).hasSize(397);
+    }
+
+
     private OffsetDateTime date(String date, String time) {
         return OffsetDateTime.of(LocalDate.parse(date), LocalTime.parse(time), ZoneOffset.UTC);
     }
 
     private static int nextScreeningId = 1;
+    private int addScreening(Movie movie, Room room, OffsetDateTime startTime) {
+        int screeningId = nextScreeningId++;
+        screeningRepo.add(new Screening(screeningId, movie, room, startTime));
 
-    private void addScreening(Movie movie, Room room, OffsetDateTime startTime) {
-        repository.add(new Screening(nextScreeningId++, movie, room, startTime));
+        return screeningId;
+    }
+
+    private static int nextReservationId = 1;
+    private int addReservation(int screeningId, int row, int column) {
+        int reservationId = nextReservationId++;
+        reservationRepo.add(new Reservation(reservationId, screeningId, row, column, new Reservation.User("John", "Smith")));
+
+        return reservationId;
     }
 
     private Condition<AvailableScreeningDto> screening(Movie movie, OffsetDateTime startTime) {
