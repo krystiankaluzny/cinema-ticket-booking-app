@@ -15,6 +15,12 @@ class InMemoryScreeningRepository implements ScreeningRepository {
     }
 
     @Override
+    public Screening save(Screening screening) {
+        add(screening);
+        return screening;
+    }
+
+    @Override
     public Screening findById(int screeningId) {
         return data.get(screeningId);
     }

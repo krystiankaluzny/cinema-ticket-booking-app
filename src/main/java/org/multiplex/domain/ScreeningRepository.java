@@ -7,6 +7,8 @@ import java.util.List;
 
 interface ScreeningRepository extends Repository<Screening, Integer> {
 
+    Screening save(Screening screening);
+
     Screening findById(int screeningId);
 
     List<Screening> findByStartScreeningTimeBetween(OffsetDateTime from, OffsetDateTime to);

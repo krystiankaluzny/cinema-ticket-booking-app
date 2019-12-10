@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Value;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -34,7 +35,7 @@ class Reservation {
     private String bookingUserSurname;
     private OffsetDateTime expirationTime;
 
-    @OneToMany
+    @OneToMany(cascade= CascadeType.ALL)
     private Set<ReservedSeat> reservedSeats;
 
     private boolean paid;

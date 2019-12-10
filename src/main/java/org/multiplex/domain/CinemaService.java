@@ -11,6 +11,7 @@ import org.multiplex.domain.dto.ScreeningSeatsInfoDto.AvailableSeatDto;
 import org.multiplex.domain.dto.TimeRangeDto;
 import org.multiplex.domain.exception.ReservationTimeException;
 import org.multiplex.domain.exception.ScreeningNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -79,8 +80,8 @@ public class CinemaService {
                 if (reservedColumnsInRow == null || !reservedColumnsInRow.contains(col)) {
 
                     availableSeats.add(AvailableSeatDto.builder()
-                            .row(row)
-                            .column(col)
+                            .row(row + 1)
+                            .column(col + 1)
                             .build());
                 }
             }
@@ -93,6 +94,7 @@ public class CinemaService {
                 .build();
     }
 
+    @Transactional
     public ReservationSummaryDto reserveSeats(ReservationDto reservationDto) {
 
         int screeningId = reservationDto.getScreeningId();
@@ -141,7 +143,7 @@ public class CinemaService {
                 .paid(false)
                 .build();
 
-        reservationRepository.save(reservation);
+        reservation = reservationRepository.save(reservation);
 
         return ReservationSummaryDto.builder()
                 .reservationId(reservation.getId())
