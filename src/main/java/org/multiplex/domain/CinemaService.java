@@ -72,16 +72,16 @@ public class CinemaService {
 
         List<AvailableSeatDto> availableSeats = new ArrayList<>();
 
-        for (int row = 0; row < screening.getRoom().getRowCount(); row++) {
-            for (int col = 0; col < screening.getRoom().getColumnCount(); col++) {
+        for (int row = 1; row <= screening.getRoom().getRowCount(); row++) {
+            for (int col = 1; col <= screening.getRoom().getColumnCount(); col++) {
 
                 Set<Integer> reservedColumnsInRow = reservedSeats.get(row);
 
                 if (reservedColumnsInRow == null || !reservedColumnsInRow.contains(col)) {
 
                     availableSeats.add(AvailableSeatDto.builder()
-                            .row(row + 1)
-                            .column(col + 1)
+                            .row(row)
+                            .column(col)
                             .build());
                 }
             }
