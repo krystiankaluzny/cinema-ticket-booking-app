@@ -5,6 +5,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.multiplex.domain.dto.ReservationDto;
+import org.multiplex.domain.exception.NoSeatToReserveException;
 import org.multiplex.domain.exception.SeatGapException;
 import org.multiplex.domain.exception.SeatNotFoundException;
 import org.multiplex.domain.exception.SeatReservedException;
@@ -87,7 +88,11 @@ class SeatsValidatorTest {
                 Arguments.of(
                         reservedSeats(1, "oooooXXXoo"),
                         seatToReserve(1, "ooooooooXo"),
-                        null)
+                        null),
+                Arguments.of(
+                        reservedSeats(1, "oooooXXXoo"),
+                        seatToReserve(1, "oooooooooo"),
+                        NoSeatToReserveException.class)
         );
     }
 

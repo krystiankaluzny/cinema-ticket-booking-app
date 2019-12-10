@@ -1,6 +1,7 @@
 package org.multiplex.domain;
 
 import org.multiplex.domain.dto.ReservationDto;
+import org.multiplex.domain.exception.NoSeatToReserveException;
 import org.multiplex.domain.exception.SeatGapException;
 import org.multiplex.domain.exception.SeatNotFoundException;
 import org.multiplex.domain.exception.SeatReservedException;
@@ -14,6 +15,10 @@ import java.util.Set;
 class SeatsValidator {
 
     public void validate(List<ReservationDto.SeatToReserveDto> seatsToReserve, Map<Integer, Set<Integer>> reservedSeats, Screening.Room room) {
+
+        if (seatsToReserve.isEmpty()) {
+            throw new NoSeatToReserveException();
+        }
 
         Map<Integer, Set<Integer>> toReserve = new HashMap<>();
 
