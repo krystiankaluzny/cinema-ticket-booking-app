@@ -34,8 +34,9 @@ class CinemaServiceTest {
     private final InMemoryReservationRepository reservationRepo = new InMemoryReservationRepository();
     private final ReservationPricingPolicy reservationPricingPolicy = new ReservationPricingPolicy();
     private final UserValidator userValidator = new UserValidator();
+    private final SeatsValidator seatsValidator = new SeatsValidator();
     private final Clock clock = Clock.fixed(Instant.parse("2019-12-09T10:30:02.00Z"), ZoneOffset.UTC);
-    private final CinemaService cinemaService = new CinemaService(screeningRepo, reservationRepo, reservationPricingPolicy, userValidator, clock);
+    private final CinemaService cinemaService = new CinemaService(screeningRepo, reservationRepo, reservationPricingPolicy, userValidator, seatsValidator, clock);
 
     @Test
     public void getAvailableScreenings_ReturnsScreenings_InTimeRange() {

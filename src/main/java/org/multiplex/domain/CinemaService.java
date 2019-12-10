@@ -31,17 +31,19 @@ public class CinemaService {
     private final ReservationRepository reservationRepository;
     private final ReservationPricingPolicy reservationPricingPolicy;
     private final UserValidator userValidator;
+    private final SeatsValidator seatsValidator;
     private final Clock clock;
 
     CinemaService(ScreeningRepository screeningRepository,
                   ReservationRepository reservationRepository,
                   ReservationPricingPolicy reservationPricingPolicy,
                   UserValidator userValidator,
-                  Clock clock) {
+                  SeatsValidator seatsValidator, Clock clock) {
         this.screeningRepository = screeningRepository;
         this.reservationRepository = reservationRepository;
         this.reservationPricingPolicy = reservationPricingPolicy;
         this.userValidator = userValidator;
+        this.seatsValidator = seatsValidator;
         this.clock = clock;
     }
 
