@@ -131,7 +131,7 @@ public class CinemaService {
 
             ReservationPricingPolicy.Price price = reservationPricingPolicy.getPrice(type);
 
-            totalPrice.add(price);
+            totalPrice = totalPrice.add(price);
         }
 
         Reservation reservation = Reservation.builder()

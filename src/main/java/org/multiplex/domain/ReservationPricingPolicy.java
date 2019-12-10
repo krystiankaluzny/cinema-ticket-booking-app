@@ -23,14 +23,14 @@ class ReservationPricingPolicy {
 
     static class Price {
         public static final Price ZERO = new Price(BigDecimal.ZERO);
-        private BigDecimal value;
+        private final BigDecimal value;
 
         private Price(BigDecimal value) {
             this.value = value;
         }
 
-        public void add(Price priceToAdd) {
-            value = value.add(priceToAdd.value);
+        public Price add(Price priceToAdd) {
+            return from(value.add(priceToAdd.value));
         }
 
         public static Price from(BigDecimal value) {
