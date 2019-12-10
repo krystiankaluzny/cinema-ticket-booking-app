@@ -8,7 +8,7 @@ import java.util.List;
 @Builder
 @Value
 public class ScreeningSeatsInfoDto {
-    private ScreeningIdDto screeningId;
+    private int screeningId;
     private String roomName;
     private List<AvailableSeatDto> availableSeats;
 

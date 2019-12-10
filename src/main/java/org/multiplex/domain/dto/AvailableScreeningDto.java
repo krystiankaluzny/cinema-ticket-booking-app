@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 @Builder
 @Value
 public class AvailableScreeningDto {
-    private ScreeningIdDto screeningId;
+    private int screeningId;
     private String movieTitle;
     private OffsetDateTime startScreeningTime;
 }

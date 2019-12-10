@@ -50,7 +50,7 @@ public class CinemaService {
 
         return screeningRepository.findByStartScreeningTimeBetween(timeRangeDto.getFrom(), timeRangeDto.getTo()).stream()
                 .map(screening -> AvailableScreeningDto.builder()
-                        .screeningId(ScreeningIdDto.fromInt(screening.getId()))
+                        .screeningId(screening.getId())
                         .movieTitle(screening.getMovie().getTitle())
                         .startScreeningTime(screening.getStartScreeningTime())
                         .build()
@@ -87,7 +87,7 @@ public class CinemaService {
         }
 
         return ScreeningSeatsInfoDto.builder()
-                .screeningId(screeningId)
+                .screeningId(screeningId.getValue())
                 .roomName(screening.getRoom().getName())
                 .availableSeats(availableSeats)
                 .build();
@@ -95,7 +95,7 @@ public class CinemaService {
 
     public ReservationSummaryDto reserveSeats(ReservationDto reservationDto) {
 
-        int screeningId = reservationDto.getScreeningId().getValue();
+        int screeningId = reservationDto.getScreeningId();
         Screening screening = screeningRepository.findById(screeningId);
 
         if (screening == null) {

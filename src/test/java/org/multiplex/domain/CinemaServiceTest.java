@@ -215,7 +215,7 @@ class CinemaServiceTest {
                 .build();
 
         ReservationDto reservationDto = ReservationDto.builder()
-                .screeningId(ScreeningIdDto.fromInt(screeningId))
+                .screeningId(screeningId)
                 .seatsToReserve(List.of(adultSeat, studentSeat, childSeat))
                 .bookingUser(ReservationDto.BookingUserDto.builder()
                         .name("John")
@@ -245,7 +245,7 @@ class CinemaServiceTest {
                 .build();
 
         ReservationDto reservationDto = ReservationDto.builder()
-                .screeningId(ScreeningIdDto.fromInt(screeningId))
+                .screeningId(screeningId)
                 .seatsToReserve(List.of(adultSeat))
                 .bookingUser(ReservationDto.BookingUserDto.builder()
                         .name("John")
@@ -266,7 +266,7 @@ class CinemaServiceTest {
         int screeningId = addScreening(FORREST_GUMP, RED_ROOM, screeningStartTime).getId();
 
         ReservationDto reservationDto = ReservationDto.builder()
-                .screeningId(ScreeningIdDto.fromInt(screeningId))
+                .screeningId(screeningId)
                 .build();
 
         //when
@@ -279,7 +279,7 @@ class CinemaServiceTest {
 
         //given
         ReservationDto reservationDto = ReservationDto.builder()
-                .screeningId(ScreeningIdDto.fromInt(20))
+                .screeningId(20)
                 .build();
 
         thenThrownBy(() -> cinemaService.reserveSeats(reservationDto))

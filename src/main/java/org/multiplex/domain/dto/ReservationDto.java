@@ -9,7 +9,7 @@ import java.util.List;
 @Value
 public class ReservationDto {
 
-    private ScreeningIdDto screeningId;
+    private int screeningId;
     private List<SeatToReserveDto> seatsToReserve;
     private BookingUserDto bookingUser;
 
@@ -25,7 +25,7 @@ public class ReservationDto {
     @Value
     public static class BookingUserDto {
         private String name;
-        private String surname;;
+        private String surname;
     }
 
     public enum ReservationType {
