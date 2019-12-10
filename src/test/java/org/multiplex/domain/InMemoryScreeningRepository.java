@@ -15,11 +15,6 @@ class InMemoryScreeningRepository implements ScreeningRepository {
     }
 
     @Override
-    public boolean exists(int screeningId) {
-        return data.containsKey(screeningId);
-    }
-
-    @Override
     public Screening findById(int screeningId) {
         return data.get(screeningId);
     }
