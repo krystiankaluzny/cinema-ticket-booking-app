@@ -68,19 +68,7 @@ public class CinemaService {
             throw new ScreeningNotFoundException(screeningId.getValue());
         }
 
-        List<Reservation> reservations = reservationRepository.findByScreeningId(screeningId.getValue());
-
-        Map<Integer, Set<Integer>> reservedSeats = new HashMap<>();
-
-        for (Reservation reservation : reservations) {
-            if (isReservationActive(reservation)) {
-                Set<ReservedSeat> seats = reservation.getReservedSeats();
-                for (ReservedSeat seat : seats) {
-                    Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(seat.getRow(), row -> new HashSet<>());
-                    reservedColumnsInRow.add(seat.getColumn());
-                }
-            }
-        }
+        Map<Integer, Set<Integer>> reservedSeats = getReservedSeats(screeningId.getValue());
 
         List<AvailableSeatDto> availableSeats = new ArrayList<>();
 
@@ -123,6 +111,8 @@ public class CinemaService {
         userValidator.validate(bookingUser);
 
         List<SeatToReserveDto> seatsToReserve = reservationDto.getSeatsToReserve();
+
+        seatsValidator.validate(seatsToReserve, getReservedSeats(screeningId), screening.getRoom());
 
         OffsetDateTime expirationTime = OffsetDateTime.now().plusMinutes(15);
         ReservationPricingPolicy.Price totalPrice = ReservationPricingPolicy.Price.ZERO;
@@ -168,6 +158,24 @@ public class CinemaService {
     private boolean isReservationTimeInvalid(OffsetDateTime startScreeningTime) {
         return OffsetDateTime.now(clock).plusMinutes(15)
                 .isAfter(startScreeningTime);
+    }
+
+    private Map<Integer, Set<Integer>> getReservedSeats(int screeningId) {
+
+        List<Reservation> reservations = reservationRepository.findByScreeningId(screeningId);
+
+        Map<Integer, Set<Integer>> reservedSeats = new HashMap<>();
+
+        for (Reservation reservation : reservations) {
+            if (isReservationActive(reservation)) {
+                Set<ReservedSeat> seats = reservation.getReservedSeats();
+                for (ReservedSeat seat : seats) {
+                    Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(seat.getRow(), row -> new HashSet<>());
+                    reservedColumnsInRow.add(seat.getColumn());
+                }
+            }
+        }
+        return reservedSeats;
     }
 
     private ReservationType typeFromDto(ReservationDto.ReservationType reservationType) {
