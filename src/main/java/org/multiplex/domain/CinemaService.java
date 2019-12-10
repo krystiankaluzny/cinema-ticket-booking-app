@@ -115,7 +115,7 @@ public class CinemaService {
 
         seatsValidator.validate(seatsToReserve, getReservedSeats(screeningId), screening.getRoom());
 
-        OffsetDateTime expirationTime = OffsetDateTime.now().plusMinutes(15);
+        OffsetDateTime expirationTime = calculateExpirationTime(screening);
         ReservationPricingPolicy.Price totalPrice = ReservationPricingPolicy.Price.ZERO;
 
         Set<ReservedSeat> reservedSeats = new HashSet<>();
@@ -159,6 +159,15 @@ public class CinemaService {
     private boolean isReservationTimeInvalid(OffsetDateTime startScreeningTime) {
         return OffsetDateTime.now(clock).plusMinutes(15)
                 .isAfter(startScreeningTime);
+    }
+
+    private OffsetDateTime calculateExpirationTime(Screening screening) {
+        OffsetDateTime proposal = OffsetDateTime.now(clock).plusDays(1);
+        if (proposal.isBefore(screening.getStartScreeningTime())) {
+            return proposal;
+        } else {
+            return screening.getStartScreeningTime();
+        }
     }
 
     private Map<Integer, Set<Integer>> getReservedSeats(int screeningId) {
