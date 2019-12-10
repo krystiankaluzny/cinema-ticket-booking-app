@@ -37,7 +37,7 @@ class CinemaConfiguration {
         Movie forrestGump = movieRepository.save(new Movie(0, "Forrest Gump", Duration.ofMinutes(141)));
 
         Room redRoom = roomRepository.save(new Room(0, "Sala czerwona", 20, 20));
-        Room blueRoom = roomRepository.save(new Room(0, "Sala niebieska", 18, 30));
+        Room blueRoom = roomRepository.save(new Room(0, "Sala niebieska", 5, 10));
         Room yellowRoom = roomRepository.save(new Room(0, "Sala żółta", 25, 25));
 
         screeningRepository.save(new Screening(0, titanic, redRoom, date("2019-12-15", "09:00")));
