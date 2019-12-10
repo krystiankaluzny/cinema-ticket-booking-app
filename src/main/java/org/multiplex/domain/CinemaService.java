@@ -120,9 +120,7 @@ public class CinemaService {
         }
 
         BookingUserDto bookingUser = reservationDto.getBookingUser();
-        if (userValidator.isInvalid(bookingUser.getName(), bookingUser.getSurname())) {
-            throw new InvalidUserNameOrSurnameException(bookingUser.getName(), bookingUser.getSurname());
-        }
+        userValidator.validate(bookingUser);
 
         List<SeatToReserveDto> seatsToReserve = reservationDto.getSeatsToReserve();
 
