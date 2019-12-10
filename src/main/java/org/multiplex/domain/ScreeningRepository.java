@@ -6,6 +6,6 @@ import java.util.List;
 interface ScreeningRepository {
 
     Screening findById(int screeningId);
-    boolean exists(int screeningId);
+
     List<Screening> findByStartTimeBetween(OffsetDateTime from, OffsetDateTime to);
 }
