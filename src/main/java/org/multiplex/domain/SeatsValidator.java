@@ -14,7 +14,7 @@ import java.util.Set;
 
 class SeatsValidator {
 
-    public void validate(List<ReservationDto.SeatToReserveDto> seatsToReserve, Map<Integer, Set<Integer>> reservedSeats, Screening.Room room) {
+    public void validate(List<ReservationDto.SeatToReserveDto> seatsToReserve, Map<Integer, Set<Integer>> reservedSeats, Room room) {
 
         if (seatsToReserve.isEmpty()) {
             throw new NoSeatToReserveException();

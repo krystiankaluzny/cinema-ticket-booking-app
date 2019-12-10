@@ -1,11 +1,13 @@
 package org.multiplex.domain;
 
+import org.springframework.data.repository.Repository;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 
-interface ScreeningRepository {
+interface ScreeningRepository extends Repository<Screening, Integer> {
 
     Screening findById(int screeningId);
 
-    List<Screening> findByStartTimeBetween(OffsetDateTime from, OffsetDateTime to);
+    List<Screening> findByStartScreeningTimeBetween(OffsetDateTime from, OffsetDateTime to);
 }

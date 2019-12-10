@@ -25,8 +25,6 @@ import java.util.Set;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.BDDAssertions.thenCode;
 import static org.assertj.core.api.BDDAssertions.thenThrownBy;
-import static org.multiplex.domain.Screening.Movie;
-import static org.multiplex.domain.Screening.Room;
 
 class CinemaServiceTest {
 
@@ -94,7 +92,7 @@ class CinemaServiceTest {
     public void getScreeningSeatsInfo_ReturnsAllSeatsAsAvailable_IfThereIsNoReservation() {
 
         //given
-        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
+        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30")).getId();
         ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
 
         //when
@@ -108,16 +106,16 @@ class CinemaServiceTest {
     public void getScreeningSeatsInfo_ReturnsAvailableSeats_SeatsForPaidReservationAreSkipped() {
 
         //given
-        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
-        ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
+        Screening screening = addScreening(FORREST_GUMP, RED_ROOM, date("2019-12-09", "12:30"));
+        ScreeningIdDto id = ScreeningIdDto.fromInt(screening.getId());
 
         Set<ReservedSeat> reservedSeats = Set.of(
-                new ReservedSeat(3, 10, ReservationType.ADULT),
-                new ReservedSeat(3, 13, ReservationType.ADULT),
-                new ReservedSeat(10, 3, ReservationType.ADULT));
+                reservedSeat(3, 10),
+                reservedSeat(3, 13),
+                reservedSeat(10, 3));
 
         Reservation.ReservationBuilder reservationBuilder = Reservation.builder()
-                .screeningId(screeningId)
+                .screening(screening)
                 .reservedSeats(reservedSeats)
                 .paid(true);
 
@@ -134,15 +132,15 @@ class CinemaServiceTest {
     public void getScreeningSeatsInfo_ReturnsAvailableSeats_SeatsForNoPaidAndNoExpiredReservationAreSkipped() {
 
         //given
-        int screeningId = addScreening(FORREST_GUMP, YELLOW_ROOM, date("2019-12-09", "12:30"));
-        ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
+        Screening screening = addScreening(FORREST_GUMP, YELLOW_ROOM, date("2019-12-09", "12:30"));
+        ScreeningIdDto id = ScreeningIdDto.fromInt(screening.getId());
 
         Set<ReservedSeat> reservedSeats = Set.of(
-                new ReservedSeat(3, 10, ReservationType.ADULT),
-                new ReservedSeat(10, 3, ReservationType.ADULT));
+                reservedSeat(3, 10),
+                reservedSeat(10, 3));
 
         Reservation.ReservationBuilder reservationBuilder = Reservation.builder()
-                .screeningId(screeningId)
+                .screening(screening)
                 .reservedSeats(reservedSeats)
                 .expirationTime(OffsetDateTime.now(clock).plusHours(2))
                 .paid(false);
@@ -160,15 +158,15 @@ class CinemaServiceTest {
     public void getScreeningSeatsInfo_ReturnsAvailableSeats_SeatsForNoPaidAndExpiredReservationAreAvailable() {
 
         //given
-        int screeningId = addScreening(FORREST_GUMP, BLUE_ROOM, date("2019-12-09", "12:30"));
-        ScreeningIdDto id = ScreeningIdDto.fromInt(screeningId);
+        Screening screening = addScreening(FORREST_GUMP, BLUE_ROOM, date("2019-12-09", "12:30"));
+        ScreeningIdDto id = ScreeningIdDto.fromInt(screening.getId());
 
         Set<ReservedSeat> reservedSeats = Set.of(
-                new ReservedSeat(3, 10, ReservationType.ADULT),
-                new ReservedSeat(23, 3, ReservationType.ADULT));
+                reservedSeat(3, 10),
+                reservedSeat(23, 3));
 
         Reservation.ReservationBuilder reservationBuilder = Reservation.builder()
-                .screeningId(screeningId)
+                .screening(screening)
                 .reservedSeats(reservedSeats)
                 .expirationTime(OffsetDateTime.now(clock).minusHours(2))
                 .paid(false);
@@ -196,7 +194,7 @@ class CinemaServiceTest {
     public void reserveSeats_CalculateCost_ForThreeReservationTypes_And_GiveExpirationTime() {
 
         //given
-        int screeningId = addScreening(GLADIATOR, YELLOW_ROOM, date("2019-12-10", "10:30"));
+        int screeningId = addScreening(GLADIATOR, YELLOW_ROOM, date("2019-12-10", "10:30")).getId();
 
         SeatToReserveDto adultSeat = SeatToReserveDto.builder()
                 .row(1)
@@ -238,7 +236,7 @@ class CinemaServiceTest {
 
         //given
         OffsetDateTime screeningStartTime = OffsetDateTime.now(clock).plusMinutes(15);
-        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, screeningStartTime);
+        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, screeningStartTime).getId();
 
         SeatToReserveDto adultSeat = SeatToReserveDto.builder()
                 .row(1)
@@ -265,7 +263,7 @@ class CinemaServiceTest {
 
         //given
         OffsetDateTime screeningStartTime = OffsetDateTime.now(clock).plusMinutes(14);
-        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, screeningStartTime);
+        int screeningId = addScreening(FORREST_GUMP, RED_ROOM, screeningStartTime).getId();
 
         ReservationDto reservationDto = ReservationDto.builder()
                 .screeningId(ScreeningIdDto.fromInt(screeningId))
@@ -295,11 +293,12 @@ class CinemaServiceTest {
 
     private static int nextScreeningId = 1;
 
-    private int addScreening(Movie movie, Room room, OffsetDateTime startTime) {
+    private Screening addScreening(Movie movie, Room room, OffsetDateTime startTime) {
         int screeningId = nextScreeningId++;
-        screeningRepo.add(new Screening(screeningId, movie, room, startTime));
+        Screening screening = new Screening(screeningId, movie, room, startTime);
+        screeningRepo.add(screening);
 
-        return screeningId;
+        return screening;
     }
 
     private static int nextReservationId = 1;
@@ -311,6 +310,11 @@ class CinemaServiceTest {
         reservationRepo.save(builder.id(reservationId).build());
 
         return reservationId;
+    }
+
+
+    private ReservedSeat reservedSeat(int row, int collumn) {
+        return new ReservedSeat(0, row, collumn, ReservationType.ADULT);
     }
 
     private Condition<AvailableScreeningDto> screening(Movie movie, OffsetDateTime startTime) {

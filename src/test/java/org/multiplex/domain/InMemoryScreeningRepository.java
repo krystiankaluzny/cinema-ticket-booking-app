@@ -20,7 +20,7 @@ class InMemoryScreeningRepository implements ScreeningRepository {
     }
 
     @Override
-    public List<Screening> findByStartTimeBetween(OffsetDateTime from, OffsetDateTime to) {
+    public List<Screening> findByStartScreeningTimeBetween(OffsetDateTime from, OffsetDateTime to) {
         return data.values().stream()
                 .filter(screening -> {
                     final OffsetDateTime startScreeningTime = screening.getStartScreeningTime();

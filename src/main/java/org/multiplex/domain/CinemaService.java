@@ -9,7 +9,6 @@ import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto.AvailableSeatDto;
 import org.multiplex.domain.dto.TimeRangeDto;
-import org.multiplex.domain.exception.InvalidUserNameOrSurnameException;
 import org.multiplex.domain.exception.ReservationTimeException;
 import org.multiplex.domain.exception.ScreeningNotFoundException;
 
@@ -49,7 +48,7 @@ public class CinemaService {
 
     public List<AvailableScreeningDto> getAvailableScreenings(TimeRangeDto timeRangeDto) {
 
-        return screeningRepository.findByStartTimeBetween(timeRangeDto.getFrom(), timeRangeDto.getTo()).stream()
+        return screeningRepository.findByStartScreeningTimeBetween(timeRangeDto.getFrom(), timeRangeDto.getTo()).stream()
                 .map(screening -> AvailableScreeningDto.builder()
                         .screeningId(ScreeningIdDto.fromInt(screening.getId()))
                         .movieTitle(screening.getMovie().getTitle())
@@ -134,7 +133,7 @@ public class CinemaService {
         }
 
         Reservation reservation = Reservation.builder()
-                .screeningId(screeningId)
+                .screening(screening)
                 .bookingUserName(bookingUser.getName())
                 .bookingUserSurname(bookingUser.getSurname())
                 .expirationTime(expirationTime)

@@ -23,7 +23,7 @@ import static org.assertj.core.api.BDDAssertions.thenThrownBy;
 
 class SeatsValidatorTest {
 
-    private static final Screening.Room TEST_ROOM = new Screening.Room(1, "Test", 10, 10);
+    private static final Room TEST_ROOM = new Room(1, "Test", 10, 10);
     private final SeatsValidator seatsValidator = new SeatsValidator();
 
     private static Stream<Arguments> reservationToValidation() {

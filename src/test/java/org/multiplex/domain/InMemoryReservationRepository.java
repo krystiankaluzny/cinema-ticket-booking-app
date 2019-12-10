@@ -18,7 +18,7 @@ class InMemoryReservationRepository implements ReservationRepository {
     @Override
     public List<Reservation> findByScreeningId(int screeningId) {
         return data.values().stream()
-                .filter(reservation -> reservation.getScreeningId() == screeningId)
+                .filter(reservation -> reservation.getScreening().getId() == screeningId)
                 .collect(Collectors.toList());
     }
 }
