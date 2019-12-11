@@ -15,9 +15,13 @@ bash build_and_run.sh
 
 Applications use default spring configuration so tomcat starts on **8080** port.
 
-## Test
+## Demo
 
-To run use case run
+To run use case demo call
 ```
 bash test.sh
-``` 
+```
+
+## Assumptions
+
+1. Reservation expires after one day or when a screening begins
