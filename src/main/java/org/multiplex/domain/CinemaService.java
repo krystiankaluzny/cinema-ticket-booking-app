@@ -68,24 +68,21 @@ public class CinemaService {
             throw new ScreeningNotFoundException(screeningId.getValue());
         }
 
-        Map<Integer, Set<Integer>> reservedSeats = getReservedSeats(screeningId.getValue());
+        var reservedSeatsInRoom = ofAll(reservationRepository.findByScreeningId(screeningId.getValue()))
+                .filter(this::isReservationActive)
+                .flatMap(Reservation::getReservedSeats)
+                .map(reservedSeat -> Tuple.of(reservedSeat.getRow(), reservedSeat.getColumn()));
 
-        List<AvailableSeatDto> availableSeats = new ArrayList<>();
+        var allSeatsInRoom = rangeClosed(1, screening.getRoom().getRowCount())
+                .crossProduct(rangeClosed(1, screening.getRoom().getColumnCount()))
+                .toList();
 
-        for (int row = 1; row <= screening.getRoom().getRowCount(); row++) {
-            for (int col = 1; col <= screening.getRoom().getColumnCount(); col++) {
-
-                Set<Integer> reservedColumnsInRow = reservedSeats.get(row);
-
-                if (reservedColumnsInRow == null || !reservedColumnsInRow.contains(col)) {
-
-                    availableSeats.add(AvailableSeatDto.builder()
-                            .row(row)
-                            .column(col)
-                            .build());
-                }
-            }
-        }
+        var availableSeats = allSeatsInRoom.removeAll(reservedSeatsInRoom)
+                .map(tuple -> AvailableSeatDto.builder()
+                        .row(tuple._1)
+                        .column(tuple._2)
+                        .build())
+                .toJavaList();
 
         return ScreeningSeatsInfoDto.builder()
                 .screeningId(screeningId.getValue())
