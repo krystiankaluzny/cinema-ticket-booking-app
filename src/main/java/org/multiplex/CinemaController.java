@@ -7,7 +7,13 @@ import org.multiplex.domain.dto.ReservationSummaryDto;
 import org.multiplex.domain.dto.ScreeningIdDto;
 import org.multiplex.domain.dto.ScreeningSeatsInfoDto;
 import org.multiplex.domain.dto.TimeRangeDto;
+import org.multiplex.domain.exception.InvalidUserNameOrSurnameException;
+import org.multiplex.domain.exception.NoSeatToReserveException;
+import org.multiplex.domain.exception.ReservationTimeException;
 import org.multiplex.domain.exception.ScreeningNotFoundException;
+import org.multiplex.domain.exception.SeatGapException;
+import org.multiplex.domain.exception.SeatNotFoundException;
+import org.multiplex.domain.exception.SeatReservedException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,7 +55,9 @@ class CinemaController {
     public ScreeningSeatsInfoDto getScreeningSeatsInfo(@PathVariable("id") int id) {
 
         try {
+
             return cinemaService.getScreeningSeatsInfo(ScreeningIdDto.fromInt(id));
+
         } catch (ScreeningNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
         }
@@ -58,9 +66,13 @@ class CinemaController {
     @PostMapping("reserve")
     public ReservationSummaryDto reserveSeats(@RequestBody ReservationDto reservationDto) {
         try {
+
             return cinemaService.reserveSeats(reservationDto);
-        } catch (ScreeningNotFoundException e) {
+
+        } catch (ScreeningNotFoundException | SeatNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        } catch (InvalidUserNameOrSurnameException | NoSeatToReserveException | ReservationTimeException | SeatGapException | SeatReservedException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
         }
     }
 
