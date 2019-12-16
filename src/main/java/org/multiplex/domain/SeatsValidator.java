@@ -14,31 +14,36 @@ import java.util.Set;
 
 class SeatsValidator {
 
-    public void validate(List<ReservationDto.SeatToReserveDto> seatsToReserve, Map<Integer, Set<Integer>> reservedSeats, Room room) {
+    public void validate(List<ReservationDto.SeatToReserveDto> seatsToReserve, io.vavr.collection.List<Seat> reservedSeats, Room room) {
 
         if (seatsToReserve.isEmpty()) {
             throw new NoSeatToReserveException();
         }
 
         Map<Integer, Set<Integer>> toReserve = new HashMap<>();
+        Map<Integer, Set<Integer>> reserved = new HashMap<>();
 
-        for (ReservationDto.SeatToReserveDto seatToReserve : seatsToReserve) {
+        seatsToReserve.forEach(seatToReserve -> {
             int row = seatToReserve.getRow();
             int column = seatToReserve.getColumn();
-
             toReserve.computeIfAbsent(row, i -> new HashSet<>()).add(column);
-        }
+        });
 
-        for (Map.Entry<Integer, Set<Integer>> entry : toReserve.entrySet()) {
-            int row = entry.getKey();
+        reservedSeats.forEach(seat -> {
+            int row = seat.getRow();
+            int column = seat.getColumn();
+            reserved.computeIfAbsent(row, i -> new HashSet<>()).add(column);
+        });
 
-            for (Integer column : entry.getValue()) {
+        toReserve.forEach((row, columns) -> {
+
+            Set<Integer> reservedColumnsInRow = reserved.computeIfAbsent(row, i -> new HashSet<>());
+
+            columns.forEach(column -> {
                 if (row < 1 || row > room.getRowCount()
                         || column < 1 || column > room.getColumnCount()) {
                     throw new SeatNotFoundException(row, column, room.getName());
                 }
-
-                Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(row, i -> new HashSet<>());
 
                 if (reservedColumnsInRow.contains(column)) {
                     throw new SeatReservedException(row, column);
@@ -63,7 +68,7 @@ class SeatsValidator {
                 }
 
                 reservedColumnsInRow.add(column);
-            }
-        }
+            });
+        });
     }
 }

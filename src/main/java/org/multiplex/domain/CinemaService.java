@@ -15,14 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import static io.vavr.collection.List.ofAll;
+import static io.vavr.collection.List.rangeClosed;
 import static java.util.Comparator.comparing;
 
 public class CinemaService {
@@ -49,7 +46,7 @@ public class CinemaService {
 
     public List<AvailableScreeningDto> getAvailableScreenings(TimeRangeDto timeRangeDto) {
 
-        return screeningRepository.findByStartScreeningTimeBetween(timeRangeDto.getFrom(), timeRangeDto.getTo()).stream()
+        return ofAll(screeningRepository.findByStartScreeningTimeBetween(timeRangeDto.getFrom(), timeRangeDto.getTo()))
                 .map(screening -> AvailableScreeningDto.builder()
                         .screeningId(screening.getId())
                         .movieTitle(screening.getMovie().getTitle())
@@ -58,7 +55,7 @@ public class CinemaService {
                 )
                 .sorted(comparing(AvailableScreeningDto::getMovieTitle)
                         .thenComparing(AvailableScreeningDto::getStartScreeningTime))
-                .collect(Collectors.toList());
+                .asJava();
     }
 
     public ScreeningSeatsInfoDto getScreeningSeatsInfo(ScreeningIdDto screeningId) {
@@ -68,21 +65,19 @@ public class CinemaService {
             throw new ScreeningNotFoundException(screeningId.getValue());
         }
 
-        var reservedSeatsInRoom = ofAll(reservationRepository.findByScreeningId(screeningId.getValue()))
-                .filter(this::isReservationActive)
-                .flatMap(Reservation::getReservedSeats)
-                .map(reservedSeat -> Tuple.of(reservedSeat.getRow(), reservedSeat.getColumn()));
+        var reservedSeatsInRoom = getReservedSeats(screeningId.getValue());
 
         var allSeatsInRoom = rangeClosed(1, screening.getRoom().getRowCount())
                 .crossProduct(rangeClosed(1, screening.getRoom().getColumnCount()))
+                .map(rowColumn -> new Seat(rowColumn._1, rowColumn._2))
                 .toList();
 
         var availableSeats = allSeatsInRoom.removeAll(reservedSeatsInRoom)
-                .map(tuple -> AvailableSeatDto.builder()
-                        .row(tuple._1)
-                        .column(tuple._2)
+                .map(seat -> AvailableSeatDto.builder()
+                        .row(seat.getRow())
+                        .column(seat.getColumn())
                         .build())
-                .toJavaList();
+                .asJava();
 
         return ScreeningSeatsInfoDto.builder()
                 .screeningId(screeningId.getValue())
@@ -113,23 +108,21 @@ public class CinemaService {
         seatsValidator.validate(seatsToReserve, getReservedSeats(screeningId), screening.getRoom());
 
         OffsetDateTime expirationTime = calculateExpirationTime(screening);
-        ReservationPricingPolicy.Price totalPrice = ReservationPricingPolicy.Price.ZERO;
 
-        Set<ReservedSeat> reservedSeats = new HashSet<>();
-        for (SeatToReserveDto seatToReserveDto : seatsToReserve) {
+        ReservationPricingPolicy.Price totalPrice = ofAll(seatsToReserve)
+                .map(SeatToReserveDto::getReservationType)
+                .map(this::typeFromDto)
+                .map(reservationPricingPolicy::getPrice)
+                .reduce(ReservationPricingPolicy.Price::add);
 
-            ReservationType type = typeFromDto(seatToReserveDto.getReservationType());
-
-            reservedSeats.add(ReservedSeat.builder()
-                    .row(seatToReserveDto.getRow())
-                    .column(seatToReserveDto.getColumn())
-                    .type(type)
-                    .build());
-
-            ReservationPricingPolicy.Price price = reservationPricingPolicy.getPrice(type);
-
-            totalPrice = totalPrice.add(price);
-        }
+        Set<ReservedSeat> reservedSeats = ofAll(seatsToReserve)
+                .map(seat ->
+                        ReservedSeat.builder()
+                                .row(seat.getRow())
+                                .column(seat.getColumn())
+                                .type(typeFromDto(seat.getReservationType()))
+                                .build())
+                .toJavaSet();
 
         Reservation reservation = Reservation.builder()
                 .screening(screening)
@@ -167,22 +160,12 @@ public class CinemaService {
         }
     }
 
-    private Map<Integer, Set<Integer>> getReservedSeats(int screeningId) {
+    private io.vavr.collection.List<Seat> getReservedSeats(int screeningId) {
 
-        List<Reservation> reservations = reservationRepository.findByScreeningId(screeningId);
-
-        Map<Integer, Set<Integer>> reservedSeats = new HashMap<>();
-
-        for (Reservation reservation : reservations) {
-            if (isReservationActive(reservation)) {
-                Set<ReservedSeat> seats = reservation.getReservedSeats();
-                for (ReservedSeat seat : seats) {
-                    Set<Integer> reservedColumnsInRow = reservedSeats.computeIfAbsent(seat.getRow(), row -> new HashSet<>());
-                    reservedColumnsInRow.add(seat.getColumn());
-                }
-            }
-        }
-        return reservedSeats;
+        return ofAll(reservationRepository.findByScreeningId(screeningId))
+                .filter(this::isReservationActive)
+                .flatMap(Reservation::getReservedSeats)
+                .map(reservedSeat -> new Seat(reservedSeat.getRow(), reservedSeat.getColumn()));
     }
 
     private ReservationType typeFromDto(ReservationDto.ReservationType reservationType) {

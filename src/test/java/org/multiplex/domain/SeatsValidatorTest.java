@@ -11,11 +11,7 @@ import org.multiplex.domain.exception.SeatNotFoundException;
 import org.multiplex.domain.exception.SeatReservedException;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.BDDAssertions.thenCode;
@@ -98,7 +94,7 @@ class SeatsValidatorTest {
 
     @ParameterizedTest
     @MethodSource("reservationToValidation")
-    void testValidate(Map<Integer, Set<Integer>> reservedSeats,
+    void testValidate(io.vavr.collection.List<Seat> reservedSeats,
                       List<ReservationDto.SeatToReserveDto> seatToReserve,
                       Class<? extends RuntimeException> expectedException) {
 
@@ -112,19 +108,15 @@ class SeatsValidatorTest {
         }
     }
 
-    private static Map<Integer, Set<Integer>> reservedSeats(int row, String seats) {
-        Map<Integer, Set<Integer>> reserved = new HashMap<>();
-
-        Set<Integer> reservedSeatsInRow = new HashSet<>();
+    private static io.vavr.collection.List<Seat> reservedSeats(int row, String seats) {
+        io.vavr.collection.List<Seat> reserved = io.vavr.collection.List.empty();
 
         char[] chars = seats.toCharArray();
         for (int i = 0; i < chars.length; i++) {
             if (chars[i] == 'X') {
-                reservedSeatsInRow.add(i + 1);
+                reserved = reserved.append(new Seat(row, i + 1));
             }
         }
-
-        reserved.put(row, reservedSeatsInRow);
 
         return reserved;
     }
