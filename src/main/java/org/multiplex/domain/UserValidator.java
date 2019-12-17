@@ -2,12 +2,17 @@ package org.multiplex.domain;
 
 import org.multiplex.domain.dto.ReservationDto;
 import org.multiplex.domain.exception.InvalidUserNameOrSurnameException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class UserValidator {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserValidator.class);
 
     public void validate(ReservationDto.BookingUserDto bookingUser) {
 
         if(!isValid(bookingUser.getName()) || !isUserSurnameValid(bookingUser.getSurname())) {
+            LOGGER.warn("Invalid booking user: {}", bookingUser);
             throw new InvalidUserNameOrSurnameException(bookingUser.getName(), bookingUser.getSurname());
         }
     }

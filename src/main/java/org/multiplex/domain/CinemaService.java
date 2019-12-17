@@ -11,6 +11,8 @@ import org.multiplex.domain.dto.ScreeningSeatsInfoDto.AvailableSeatDto;
 import org.multiplex.domain.dto.TimeRangeDto;
 import org.multiplex.domain.exception.ReservationTimeException;
 import org.multiplex.domain.exception.ScreeningNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -23,6 +25,8 @@ import static io.vavr.collection.List.rangeClosed;
 import static java.util.Comparator.comparing;
 
 public class CinemaService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CinemaService.class);
 
     private final ScreeningRepository screeningRepository;
     private final ReservationRepository reservationRepository;
@@ -62,6 +66,7 @@ public class CinemaService {
 
         Screening screening = screeningRepository.findById(screeningId.getValue());
         if (screening == null) {
+            LOGGER.error("There is no screening with id {}", screeningId);
             throw new ScreeningNotFoundException(screeningId.getValue());
         }
 
@@ -89,14 +94,18 @@ public class CinemaService {
     @Transactional
     public ReservationSummaryDto reserveSeats(ReservationDto reservationDto) {
 
+        LOGGER.info("Start making reservation of screening with id: {}", reservationDto.getScreeningId());
+
         int screeningId = reservationDto.getScreeningId();
         Screening screening = screeningRepository.findById(screeningId);
 
         if (screening == null) {
+            LOGGER.error("There is no screening with id {}", screeningId);
             throw new ScreeningNotFoundException(screeningId);
         }
 
         if (isReservationTimeInvalid(screening.getStartScreeningTime())) {
+            LOGGER.info("Too late for making reservations on screening {}", screeningId);
             throw new ReservationTimeException();
         }
 
@@ -179,6 +188,7 @@ public class CinemaService {
                 return ReservationType.CHILD;
         }
 
+        LOGGER.error("Unknown reservation type: {}", reservationType);
         throw new IllegalArgumentException("Unknown reservation type: " + reservationType);
     }
 }
