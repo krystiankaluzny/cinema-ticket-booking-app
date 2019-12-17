@@ -131,6 +131,7 @@ public class CinemaService {
                 .expirationTime(expirationTime)
                 .reservedSeats(reservedSeats)
                 .paid(false)
+                .totalCost(totalPrice.getValue())
                 .build();
 
         reservation = reservationRepository.save(reservation);

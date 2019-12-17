@@ -13,6 +13,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
@@ -40,5 +41,6 @@ class Reservation {
     private Set<ReservedSeat> reservedSeats;
 
     private boolean paid;
+    private BigDecimal totalCost;
 }
 
