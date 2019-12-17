@@ -36,6 +36,7 @@ class Reservation {
     private OffsetDateTime expirationTime;
 
     @OneToMany(cascade= CascadeType.ALL)
+    @JoinColumn(name = "fk_reservation_id")
     private Set<ReservedSeat> reservedSeats;
 
     private boolean paid;

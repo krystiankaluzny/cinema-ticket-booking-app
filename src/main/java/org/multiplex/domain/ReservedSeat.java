@@ -17,6 +17,7 @@ import javax.persistence.Id;
 @NoArgsConstructor
 @Getter
 class ReservedSeat {
+
     @Id
     @GeneratedValue
     private int id;
